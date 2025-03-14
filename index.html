@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园墙 - 班级留言板</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui;
+            margin: 0;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .filter-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .post-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .post-card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .post-class {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>校园留言墙</h1>
+            <div class="filter-box">
+                <select id="grade">
+                    <option value="">全部年级</option>
+                    <option value="初一">初一</option>
+                    <option value="初二">初二</option>
+                    <option value="初三">初三</option>
+                </select>
+                <select id="class">
+                    <option value="">全部班级</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="post-container" class="post-list"></div>
+    </div>
+
+    <script>
+        // 班级配置
+        const classes = {
+            "初一": Array.from({length:12}, (_,i) => `初一${i+1}班`),
+            "初二": Array.from({length:12}, (_,i) => `初二${i+1}班`),
+            "初三": Array.from({length:12}, (_,i) => `初三${i+1}班`)
+        }
+
+        // DOM元素
+        const gradeSelect = document.getElementById('grade');
+        const classSelect = document.getElementById('class');
+        const postContainer = document.getElementById('post-container');
+        
+        // 初始化班级选项
+        function updateClasses() {
+            const grade = gradeSelect.value;
+            classSelect.innerHTML = '<option value="">全部班级</option>';
+            
+            if(grade && classes[grade]) {
+                classes[grade].forEach(c => {
+                    const option = new Option(c, c);
+                    classSelect.add(option);
+                });
+            }
+        }
+
+        // 加载并显示数据
+        function loadPosts() {
+            fetch('data/posts.json')
+                .then(r => r.json())
+                .then(posts => {
+                    renderPosts(posts);
+                    setupFilter(posts);
+                });
+        }
+
+        // 渲染留言
+        function renderPosts(posts) {
+            postContainer.innerHTML = posts.map(post => `
+                <div class="post-card">
+                    <div class="post-class">${post.class}</div>
+                    <div>${post.content}</div>
+                </div>
+            `).join('');
+        }
+
+        // 设置筛选功能
+        function setupFilter(allPosts) {
+            function filterPosts() {
+                const targetClass = classSelect.value;
+                const filtered = targetClass ? 
+                    allPosts.filter(p => p.class === targetClass) : 
+                    allPosts;
+                renderPosts(filtered);
+            }
+
+            gradeSelect.addEventListener('change', () => {
+                updateClasses();
+                filterPosts();
+            });
+
+            classSelect.addEventListener('change', filterPosts);
+        }
+
+        // 初始化
+        gradeSelect.addEventListener('change', updateClasses);
+        loadPosts();
+    </script>
+</body>
+</html>
